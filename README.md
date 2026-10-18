@@ -38,7 +38,9 @@ Build before E2E tests. On Linux CI, use `npx playwright install --with-deps chr
 
 ## Deploy to your GitHub Pages
 
-No repository or account name is hardcoded, and no GitHub repository was provided with this workspace. Deployment is prepared, not published.
+Repository: [gulgulgul-21/Build-muscle](https://github.com/gulgulgul-21/Build-muscle). GitHub Pages URL: [Open Form](https://gulgulgul-21.github.io/Build-muscle/). Publishing is managed by the [deployment workflow](https://github.com/gulgulgul-21/Build-muscle/actions/workflows/deploy.yml).
+
+The build configuration does not hardcode the repository or account name. The setup below also applies when deploying a fork to another repository.
 
 1. Create your own empty GitHub repository, then initialize and push this directory to its `main` branch. Replace the placeholder URL below with your real repository URL:
 
