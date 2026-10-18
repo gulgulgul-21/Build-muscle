@@ -302,5 +302,15 @@
   "ลองเปิดใหม่ ตรวจสอบว่าเบราว์เซอร์อนุญาต IndexedDB อย่าล้างข้อมูลก่อนสำรอง": "Try reopening and check that your browser allows IndexedDB. Back up before clearing data.",
   "ลองใหม่": "Try again",
   "ไม่สามารถเปิดพื้นที่จัดเก็บได้ กรุณาอนุญาต IndexedDB และเปิดแอปใหม่": "Unable to open storage. Allow IndexedDB in your browser and reopen the app.",
-  "วัน{0}": "{0}"
+  "วัน{0}": "{0}",
+  "ปฏิทินการฝึก": "Training calendar",
+  "กำลังฝึก": "In progress",
+  "วันพัก": "Rest day",
+  "เดือนก่อนหน้า": "Previous month",
+  "เดือนถัดไป": "Next month",
+  "วันที่ในปฏิทิน": "Calendar dates",
+  "วันพัก · เลือกแผน A / B / C ด้านล่างหากต้องการฝึกเอง": "Rest day · Choose plan A / B / C below to train manually",
+  "เริ่มฝึกวันที่เลือก": "Start selected day",
+  "ฝึกชดเชย {0}": "Make up workout {0}",
+  "ปฏิทินใช้วันที่กำหนดของเซสชัน การฝึกชดเชยจะแสดงบนวันที่ที่เลือก ประวัติเดิมไม่เปลี่ยนเมื่อแก้แผน": "The calendar uses each session’s assigned date. Make-up sessions appear on the selected date. Plan edits do not change past sessions."
 }

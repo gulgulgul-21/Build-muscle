@@ -14,6 +14,8 @@ import { useData } from "../../app/context";
 import { Heading, Back, weekdayNames, NumberField } from "../../components/ui";
 import { startSession, saveDay, saveProgram } from "../../db/repository";
 import { localDate, type Day } from "../../domain/model";
+import { TrainingCalendar } from "./TrainingCalendar";
+import { Prescription } from "../../components/Prescription";
 export const guidance = [
   "สัปดาห์ 1 · เรียนรู้ฟอร์มและเก็บค่าตั้งต้น ฝึกตามแผน 3 ครั้ง",
   "สัปดาห์ 2 · เพิ่มจำนวนที่มีคุณภาพเล็กน้อย เมื่อฟื้นตัวดี",
@@ -58,6 +60,16 @@ export function WorkoutHub() {
           onChange={(e) => setDate(e.target.value)}
         />
       </label>
+      <TrainingCalendar
+        selectedDate={date}
+        onSelect={setDate}
+        onStart={(dayId) =>
+          void run(async () => {
+            await startSession(dayId, date);
+            navigate("/workout/active");
+          })
+        }
+      />
       <div className="plan-list">
         {[...data.programDays]
           .sort((a, b) => a.weekday - b.weekday)
@@ -78,13 +90,7 @@ export function WorkoutHub() {
                   <div className="exercise-row" key={t.exerciseId}>
                     <span>{ex?.name}</span>
                     <span className="muted">
-                      {t.sets} × {t.min}
-                      {t.min !== t.max ? `–${t.max}` : ""}{" "}
-                      {ex?.modality === "hold"
-                        ? tr("วิ")
-                        : ex?.perSide
-                          ? tr("/ข้าง")
-                          : ""}
+                      <Prescription target={t} exercise={ex} />
                     </span>
                   </div>
                 );
@@ -229,7 +235,7 @@ function DayEditor({ original }: { original: Day }) {
             <summary>
               {exercise?.name}
               <span>
-                {t.sets} × {t.min}–{t.max}
+                <Prescription target={t} exercise={exercise} />
               </span>
             </summary>
             <div className="grid-2">

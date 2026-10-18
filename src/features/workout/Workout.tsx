@@ -10,6 +10,7 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { useData } from "../../app/context";
+import { Prescription } from "../../components/Prescription";
 import { Back, Heading, NumberField, Empty } from "../../components/ui";
 import {
   closeSession,
@@ -112,13 +113,7 @@ export function ActiveWorkout() {
         <h1>{exercise.name}</h1>
         <p className="muted">
           {tr("เป้า ")}
-          {target.sets} × {target.min}–{target.max}{" "}
-          {exercise.modality === "hold"
-            ? tr("วินาที")
-            : exercise.perSide
-              ? tr("ครั้ง / ข้าง")
-              : tr("ครั้ง")}{" "}
-          {tr("· พัก ")}
+          <Prescription target={target} exercise={exercise} /> {tr("· พัก ")}
           {target.rest} {tr(" วิ")}
         </p>
         <p className="caption">
@@ -749,7 +744,10 @@ export function Summary() {
               <small className="caption">
                 {" "}
                 {tr("เป้า ")}
-                {t.sets} × {t.min}–{t.max}
+                <Prescription
+                  target={t}
+                  exercise={data.exercises.find((e) => e.id === t.exerciseId)}
+                />
               </small>
             </span>
             <span>

@@ -1,4 +1,109 @@
 import { test, expect, type Page } from "@playwright/test";
+test("calendar navigates months and dates, logs make-up sessions, and labels sets and repetitions", async ({
+  page,
+}) => {
+  await openMonday(page);
+  await page.getByRole("link", { name: "ฝึก", exact: true }).click();
+  await expect(
+    page.getByRole("heading", { name: "ปฏิทินการฝึก", exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.locator(".plan-day").first().locator(".exercise-row").first(),
+  ).toContainText("5 เซต × 1–2 ครั้ง");
+  await page
+    .getByRole("combobox", { name: "ภาษา / Language" })
+    .selectOption("en");
+  await expect(
+    page.locator(".plan-day").first().locator(".exercise-row").first(),
+  ).toContainText("5 sets × 1–2 reps");
+  await expect(
+    page.locator(".exercise-row").filter({ hasText: "Dead Bug" }),
+  ).toContainText("3 sets × 10 reps per side");
+  await expect(
+    page.locator(".exercise-row").filter({ hasText: "Hollow Hold" }),
+  ).toContainText("3 sets × 20–30 seconds");
+  const calendar = page.locator(".training-calendar");
+  await calendar
+    .getByRole("button", { name: "Previous month", exact: true })
+    .click();
+  await expect(calendar.locator(".calendar-month h3")).toHaveText(
+    "September 2026",
+  );
+  await calendar
+    .getByRole("button", { name: "Next month", exact: true })
+    .click();
+  await expect(calendar.locator(".calendar-month h3")).toHaveText(
+    "October 2026",
+  );
+  await calendar.getByRole("button", { name: "Today", exact: true }).click();
+  const monday = calendar.locator('[data-date="2026-10-19"]');
+  await monday.focus();
+  await monday.press("ArrowRight");
+  await expect(calendar.locator('[data-date="2026-10-20"]')).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
+  await expect(calendar.locator(".calendar-details")).toContainText("Rest day");
+  await page.getByRole("link", { name: "Edit plan", exact: true }).click();
+  await page
+    .getByLabel("Four-week plan start date", { exact: true })
+    .fill("2026-10-12");
+  await page.getByRole("button", { name: "Save date", exact: true }).click();
+  await page.getByRole("link", { name: "Back", exact: true }).click();
+  await page.locator('[data-date="2026-10-14"]').click();
+  await expect(page.locator('[data-date="2026-10-14"]')).toHaveAttribute(
+    "aria-label",
+    /Not completed/,
+  );
+  await page
+    .getByRole("button", { name: "Start selected day", exact: true })
+    .click();
+  await expect(
+    page.getByRole("heading", { name: "Goblet Squat", exact: true }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Log set", exact: true }).click();
+  await expect(page.getByText("Set 2", { exact: true })).toBeVisible();
+  page.once("dialog", (dialog) => dialog.accept());
+  await page
+    .getByRole("button", { name: "Finish workout", exact: true })
+    .click();
+  await expect(
+    page.getByRole("heading", { name: "Another session in the books" }),
+  ).toBeVisible();
+  await expect(page.locator(".page-heading")).toContainText("2026-10-14");
+  await page.getByRole("link", { name: "Workout", exact: true }).click();
+  await page.locator('[data-date="2026-10-14"]').click();
+  await expect(page.locator('[data-date="2026-10-14"]')).toHaveAttribute(
+    "aria-label",
+    /Completed/,
+  );
+  await expect(page.locator(".calendar-session")).toContainText("B · Legs");
+  await page.reload();
+  await page.locator('[data-date="2026-10-14"]').click();
+  await expect(page.locator(".calendar-session")).toHaveCount(1);
+  await page.setViewportSize({ width: 320, height: 740 });
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true);
+  const cell = await page.locator('[data-date="2026-10-14"]').boundingBox();
+  expect(cell!.width).toBeGreaterThanOrEqual(44);
+  await page
+    .getByRole("combobox", { name: "ภาษา / Language" })
+    .selectOption("th");
+  await expect(
+    page.getByRole("heading", { name: "ปฏิทินการฝึก", exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.locator(".exercise-row").filter({ hasText: "Hollow Hold" }),
+  ).toContainText("3 เซต × 20–30 วินาที");
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true);
+});
 test("switches Thai and English across screens, survives refresh and backup, preserves workout input", async ({
   page,
   context,
@@ -172,7 +277,9 @@ test("seed plan, multiple sets, single-set PR, summary and unchanged historical 
   await expect(editor.getByRole("status")).toHaveText("บันทึกแผนแล้ว");
   await page.getByRole("link", { name: "พัฒนาการ", exact: true }).click();
   await page.locator(".history-row").first().click();
-  await expect(page.getByText("เป้า 5 × 1–2", { exact: true })).toBeVisible();
+  await expect(
+    page.getByText("เป้า 5 เซต × 1–2 ครั้ง", { exact: true }),
+  ).toBeVisible();
 });
 test("refresh resumes a single session, saved sets and absolute timer", async ({
   page,
@@ -247,7 +354,9 @@ test("JSON export erase import restores matching session data", async ({
   await page.getByRole("link", { name: "พัฒนาการ", exact: true }).click();
   await expect(page.locator(".history-row")).toHaveCount(1);
   await page.locator(".history-row").click();
-  await expect(page.getByText("เป้า 5 × 1–2", { exact: true })).toBeVisible();
+  await expect(
+    page.getByText("เป้า 5 เซต × 1–2 ครั้ง", { exact: true }),
+  ).toBeVisible();
 });
 test("hash navigation, small screens and offline cached shell support workout writes", async ({
   page,
