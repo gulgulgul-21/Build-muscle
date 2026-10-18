@@ -1,5 +1,5 @@
 import { useLanguage } from "../../i18n/LanguageProvider";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Download, Upload, LockKeyhole, Database, Check } from "lucide-react";
 import { useData } from "../../app/context";
 import { Heading, NumberField, weekdayNames } from "../../components/ui";
@@ -16,6 +16,9 @@ import {
 } from "../../db/repository";
 import { localDate, type Backup } from "../../domain/model";
 import { LanguagePicker } from "../../components/LanguagePicker";
+import { SyncSettings } from "../sync/SyncSettings";
+import { useSync } from "../sync/SyncProvider";
+import { db } from "../../db/repository";
 function BaselineSettings() {
   const { t: tr } = useLanguage();
 
@@ -82,10 +85,15 @@ function BaselineRow({
   );
 }
 export function Settings() {
+  const sync = useSync();
   const { t: tr, intlLocale } = useLanguage();
 
   const { data, run, busy } = useData();
   const [profile, setProfile] = useState(structuredClone(data.profile[0]));
+  const sourceProfile = JSON.stringify(data.profile[0]);
+  useEffect(() => {
+    setProfile(JSON.parse(sourceProfile));
+  }, [sourceProfile]);
   const [saved, setSaved] = useState(false);
   const [backup, setBackup] = useState<Backup | null>(null);
   const [mode, setMode] = useState<"merge" | "replace">("merge");
@@ -106,14 +114,15 @@ export function Settings() {
       <div className="privacy-note">
         <LockKeyhole size={20} />
         <p>
-          {tr("ข้อมูลอยู่ในเบราว์เซอร์นี้เท่านั้น")}
+          {tr("ข้อมูลบันทึกในอุปกรณ์ และเลือกซิงก์ผ่าน Supabase ได้")}
           <span>
             {tr(
-              "ไม่ซิงก์ข้ามอุปกรณ์ การล้างข้อมูลเบราว์เซอร์อาจลบประวัติทั้งหมด สำรองไฟล์เป็นระยะ",
+              "หากไม่ได้เข้าสู่ระบบ ข้อมูลจะอยู่เฉพาะอุปกรณ์นี้ ควรสำรองไฟล์เป็นระยะ",
             )}
           </span>
         </p>
       </div>
+      <SyncSettings />
       <form
         onSubmit={(e) => {
           e.preventDefault();
@@ -391,12 +400,12 @@ export function Settings() {
         <h2>{tr("ความเป็นส่วนตัว")}</h2>
         <p className="muted">
           {tr(
-            "ไม่มีบัญชี ไม่มีเซิร์ฟเวอร์ข้อมูล ไม่มีตัวติดตาม หน้าเว็บ GitHub Pages เป็นสาธารณะ แต่ประวัติอยู่ในอุปกรณ์นี้ ผู้ที่ใช้เบราว์เซอร์เดียวกันอาจมองเห็นข้อมูลได้",
+            "เมื่อเปิดซิงก์ ข้อมูลการฝึกและตั้งค่าจะเก็บในบัญชี Supabase ของคุณบนเซิร์ฟเวอร์สิงคโปร์ แต่ละบัญชีเข้าถึงได้เฉพาะข้อมูลตัวเอง ผู้ที่ใช้เบราว์เซอร์เดียวกันอาจมองเห็นข้อมูลที่บันทึกไว้ในเครื่อง",
           )}
         </p>
         <p className="caption">
           {tr(
-            "ไฟล์สำรองเป็นข้อมูลส่วนตัว ไม่เข้ารหัส เก็บในที่ปลอดภัย แอปไม่อัปโหลดให้อัตโนมัติ",
+            "ไฟล์สำรองเป็นข้อมูลส่วนตัว ไม่เข้ารหัส เก็บในที่ปลอดภัย การนำเข้าไฟล์ขณะเปิดซิงก์จะเปลี่ยนข้อมูลบนอุปกรณ์อื่นด้วย",
           )}
         </p>
         <button
@@ -411,12 +420,16 @@ export function Settings() {
               ) &&
               window.prompt(tr("พิมพ์ RESET เพื่อยืนยัน")) === "RESET"
             )
-              void run(resetData).then((ok) => {
+              void run(async () => {
+                await sync.signOut();
+                await db.syncMeta.clear();
+                await resetData();
+              }).then((ok) => {
                 if (ok) location.reload();
               });
           }}
         >
-          {tr("ล้างข้อมูลและเริ่มใหม่")}
+          {tr("ล้างข้อมูลอุปกรณ์นี้และออกจากระบบ")}
         </button>
       </section>
     </>

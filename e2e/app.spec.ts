@@ -333,7 +333,9 @@ test("JSON export erase import restores matching session data", async ({
   page.on("dialog", (dialog) =>
     dialog.accept(dialog.type() === "prompt" ? "RESET" : undefined),
   );
-  await page.getByRole("button", { name: "ล้างข้อมูลและเริ่มใหม่" }).click();
+  await page
+    .getByRole("button", { name: "ล้างข้อมูลอุปกรณ์นี้และออกจากระบบ" })
+    .click();
   await expect(
     page.getByRole("heading", { name: "ตั้งค่า", exact: true }),
   ).toBeVisible();

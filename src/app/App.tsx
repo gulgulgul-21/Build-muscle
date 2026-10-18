@@ -21,6 +21,8 @@ const Progress = lazy(() =>
 );
 import { Settings } from "../features/settings/Settings";
 import { LanguagePicker } from "../components/LanguagePicker";
+import { SyncProvider } from "../features/sync/SyncProvider";
+import { SyncIndicator } from "../features/sync/SyncIndicator";
 function Shell() {
   const { t: tr } = useLanguage();
   const [cached, setCached] = useState(false);
@@ -48,10 +50,7 @@ function Shell() {
           <span className="brand-sub">PERSONAL CALISTHENICS</span>
         </a>
         <div className="header-tools">
-          <span className="local-badge">
-            <span />
-            {tr("พื้นที่ของคุณ")}
-          </span>
+          <SyncIndicator />
           <LanguagePicker />
         </div>
       </div>
@@ -118,7 +117,9 @@ export default function App() {
   return (
     <HashRouter>
       <DataProvider>
-        <Shell />
+        <SyncProvider>
+          <Shell />
+        </SyncProvider>
       </DataProvider>
     </HashRouter>
   );

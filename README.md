@@ -1,6 +1,6 @@
 # Form — Personal Calisthenics
 
-A Thai-first, single-user calisthenics PWA. React + strict TypeScript + Vite, Tailwind, Lucide, HashRouter, Dexie/IndexedDB, Zod, Recharts and date-fns. No accounts, network database, analytics, runtime secrets, or paid services. Fonts use the device's font stack; no external font request.
+A Thai-first, local-first calisthenics PWA with optional Supabase account sync. React + strict TypeScript + Vite, Tailwind, Lucide, HashRouter, Dexie/IndexedDB, Zod, Recharts and date-fns. No analytics or server secrets in the browser. Fonts use the device's font stack.
 
 The interface supports Thai and English. Use the language selector in the header or Settings; Thai is the default. Your choice is stored in IndexedDB, included in backups, and available offline. UI labels, dates, exercise instructions, safety guidance, confirmations and charts follow the selected language. Exercise names and your own notes/profile entries stay as entered. Database version 2 adds the preference without deleting version 1 data; older backups default to Thai when the preference is missing.
 
@@ -40,7 +40,7 @@ Build before E2E tests. On Linux CI, use `npx playwright install --with-deps chr
 
 Repository: [gulgulgul-21/Build-muscle](https://github.com/gulgulgul-21/Build-muscle). GitHub Pages URL: [Open Form](https://gulgulgul-21.github.io/Build-muscle/). Publishing is managed by the [deployment workflow](https://github.com/gulgulgul-21/Build-muscle/actions/workflows/deploy.yml).
 
-The build configuration does not hardcode the repository or account name. The setup below also applies when deploying a fork to another repository.
+The build base path follows the repository name. Forks must also replace the public Supabase project configuration and auth redirect URL in `src/features/sync/client.ts` and `SyncSettings.tsx` with their own project.
 
 1. Create your own empty GitHub repository, then initialize and push this directory to its `main` branch. Replace the placeholder URL below with your real repository URL:
 
@@ -93,7 +93,7 @@ Use a fresh preview process after changing base paths. Browsers may retain the p
 
 ## Storage, architecture and metrics
 
-`src/domain` contains schemas and pure metric/schedule/state functions. `src/db` owns schema version 2 (backup format version 1), indexes, once-only seed and transactional repository operations. `src/app` provides routing and a reactive Dexie data context. Feature screens use repository functions rather than database internals. `src/components` contains small shared controls. Progress charts load as a separate chunk; all app chunks are precached for offline navigation. No additional global state library or shadcn wrapper is needed for these native controls.
+`src/domain` contains schemas and pure metric/schedule/state functions. `src/db` owns schema version 3 (backup format version 1), indexes, once-only seed and transactional repository operations. Version 3 adds private sync metadata without deleting existing workout data. `src/features/sync` separates a three-way merge engine, transactional device storage, authenticated transport and account UI. `src/app` provides routing and a reactive Dexie data context. Progress charts load as a separate chunk; all app chunks are precached for offline navigation.
 
 Program days embed ordered exercise prescriptions rather than needing a separate program-exercises join table. Session snapshots copy those prescriptions at start. Later plan edits never rewrite old or active snapshots. UUID primary keys, explicit timestamps and a unique session/exercise/ordinal index protect set identity. IndexedDB transactions serialize starts, keep set/record/timer writes together, and make import all-or-nothing. Future migrations must be added as new Dexie versions without clearing existing stores.
 
@@ -107,7 +107,21 @@ In Settings, select **สำรอง JSON** and keep the file somewhere safe. O
 
 Backups include schema/app versions, export time, all user-owned tables and active session state. Zod validates every table before import; additional graph checks reject missing references, duplicate keys, malformed state and conflicting plans. Unsupported future versions are rejected. Keep an independent backup before replacing data.
 
-Normal GitHub Pages URLs and source/default data are public. Your logged data stays in the current browser's IndexedDB and is never committed or uploaded. Browser storage can be cleared, devices do not synchronize, private browsing may discard storage, and shared-device users may see your data. Backups contain personal data and are unencrypted; handle them accordingly. Offline readiness does not provide protection against browser storage deletion.
+Normal GitHub Pages URLs and source/default data are public. Signed-out workout data stays in IndexedDB. Enabling sync uploads your workouts, profile and settings to your private Supabase account in Singapore. Browser storage can be cleared, private browsing may discard storage, and shared-device users may see local data even after sign-out. Backups contain personal data and are unencrypted. Offline readiness does not protect against browser storage deletion.
+
+## Sync setup and use
+
+Open Settings → Sync across devices. Request a sign-in link and open it on the device you want to connect. Use the same email on both devices. On the first device, select **Use this device's data everywhere**. On the second, select **Use cloud data**. Independent device seeds have different IDs, so initial datasets are deliberately not merged automatically. Both snapshots download before an explicit replacement; allow downloads and retain these backups.
+
+Changes save locally immediately. While signed in, sync runs after local edits, on reconnect/focus, and every 30 seconds while the app is open. Closed apps do not sync. The base snapshot/revision persists in IndexedDB so offline edits survive reloads. Non-overlapping edits merge; edits to the same field, deletion-versus-edit, conflicting plans or incompatible active sessions pause sync. Choose the desired source in Settings after reviewing/backing up both sides. Imports while signed in also sync to other devices. Local reset signs out and clears only this device; cloud data remains available when reconnecting.
+
+Backend project: `zievvkvcifigwmcvezsb`, `ap-southeast-1`, in gps-21's Org. Apply `supabase/migrations/202610180001_sync.sql` to a new Supabase project, enable email auth and set Auth → URL Configuration → Site URL to your Pages URL. The configured browser key is publishable, not a secret. Never add a service-role/secret key to this repository. Row-level security isolates each account. Writes use an authenticated compare-and-swap RPC; clients cannot directly insert/update/delete documents or bypass revision checks. Auth tokens and sync bindings are excluded from backups. Cloud data is not cached by the service worker.
+
+The default Supabase email sender only delivers to organization team addresses and has low rate limits. The owner can use their Supabase organization email now; supporting other email addresses requires configuring custom SMTP in Supabase. Magic links use the default templates and redirect to the configured Pages URL. No SMTP credentials are stored in this app. See [Supabase passwordless auth](https://supabase.com/docs/guides/auth/auth-email-passwordless) and [email delivery restrictions](https://supabase.com/docs/guides/auth/auth-smtp).
+
+Security Advisor reports the [authenticated SECURITY DEFINER RPC advisory](https://supabase.com/docs/guides/database/database-linter?lint=0029_authenticated_security_definer_function_executable). This exposure is intentional: `form_sync_write` fixes `search_path`, derives account ownership only from `auth.uid()`, validates payload limits and checks the expected revision atomically. Anonymous execution and direct document writes are denied. Do not grant access to additional roles or accept a client-supplied account ID.
+
+Sync tests cover two-device offline edits, conflict detection, compare-and-swap races, graph validation, in-flight local edits and account binding. The browser sync test mocks the network with two isolated device contexts; actual database role checks verify owner isolation, anonymous denial, direct write denial and stale revisions. End-user email delivery still requires opening the sign-in email.
 
 ## Verification limits
 

@@ -9,6 +9,7 @@ import { enUS, th } from "date-fns/locale";
 import { useLiveQuery } from "dexie-react-hooks";
 import { db, saveSettings } from "../db/repository";
 import english from "./en.json";
+import syncEnglish from "./sync-en.json";
 export type Language = "th" | "en";
 export function translate(
   language: Language,
@@ -16,7 +17,7 @@ export function translate(
   ...values: unknown[]
 ) {
   const key = text.trim().replace(/\s+/g, " ");
-  const dictionary: Record<string, string> = english;
+  const dictionary: Record<string, string> = { ...english, ...syncEnglish };
   const translated = language === "en" ? (dictionary[key] ?? key) : key;
   const leading = text.match(/^ +/)?.[0] || "";
   const trailing = text.match(/ +$/)?.[0] || "";

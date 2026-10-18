@@ -36,13 +36,15 @@ describe("data integrity", () => {
     });
     const before = await exportBackup();
     const schema = Object.fromEntries(
-      db.tables.map((table) => [
-        table.name,
-        [
-          table.schema.primKey.src,
-          ...table.schema.indexes.map((index) => index.src),
-        ].join(","),
-      ]),
+      db.tables
+        .filter((table) => table.name !== "syncMeta")
+        .map((table) => [
+          table.name,
+          [
+            table.schema.primKey.src,
+            ...table.schema.indexes.map((index) => index.src),
+          ].join(","),
+        ]),
     );
     await db.delete();
     const legacy = new Dexie(db.name);
@@ -60,7 +62,7 @@ describe("data integrity", () => {
       );
     legacy.close();
     await db.open();
-    expect(db.verno).toBe(2);
+    expect(db.verno).toBe(3);
     expect((await exportBackup()).data).toEqual(before.data);
   });
   it("keeps A/B/C schedule mapping, respects exclusions and updates baseline provenance", async () => {

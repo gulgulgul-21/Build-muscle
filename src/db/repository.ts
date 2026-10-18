@@ -27,6 +27,7 @@ import {
   type Backup,
 } from "../domain/model";
 import { seedData } from "./seed";
+import type { SyncBinding } from "../features/sync/engine";
 class Database extends Dexie {
   profile!: Table<Profile>;
   exercises!: Table<Exercise>;
@@ -38,6 +39,7 @@ class Database extends Dexie {
   measurements!: Table<Measurement>;
   personalRecords!: Table<RecordEntry>;
   settings!: Table<Settings>;
+  syncMeta!: Table<SyncBinding>;
   constructor() {
     super("form-calisthenics");
     this.version(1).stores({
@@ -57,10 +59,11 @@ class Database extends Dexie {
       .upgrade((tx) =>
         tx.table("settings").toCollection().modify({ language: "th" }),
       );
+    this.version(3).stores({ syncMeta: "id" });
   }
 }
 export const db = new Database();
-const names = [
+export const names = [
   "profile",
   "exercises",
   "programs",

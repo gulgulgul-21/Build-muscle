@@ -5,3 +5,8 @@ test-results/
 *.local
 
 *.tsbuildinfo
+.npm-cache/
+.env
+.env.*
+!.env.example
+supabase-url-proof.png

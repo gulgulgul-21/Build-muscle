@@ -11,6 +11,7 @@ export default defineConfig({
         manualChunks: {
           "react-vendor": ["react", "react-dom", "react-router-dom"],
           storage: ["dexie", "dexie-react-hooks", "zod"],
+          cloud: ["@supabase/supabase-js"],
         },
       },
     },
